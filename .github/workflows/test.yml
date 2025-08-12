@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        shell: /bin/bash
+        shell: bash
         working-directory: ${{ github.workspace }}
 
     steps:
