@@ -1,0 +1,48 @@
+name: Build Packages on Release
+
+on:
+  release:
+    types:
+      - created
+
+permissions:
+  contents: write
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: fedora:42
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Essential Tools
+        run: dnf install -y dnf-plugins-core gh redhat-rpm-config rpm-build rpmdevtools rpmlint
+
+      - name: Setup Build Environment
+        run: rpmdev-setuptree
+
+      - name: Download Source Tarball
+        run: spectool -g -a -R looking-glass.spec
+
+      - name: Install Build Dependencies
+        run: dnf builddep -y --spec looking-glass.spec
+
+      - name: Build Packages
+        run: rpmbuild -ba looking-glass.spec
+
+      - name: Upload Packages to Release
+        run: gh release upload ${{ github.ref_name }} $HOME/rpmbuild/RPMS/*/*.rpm $HOME/rpmbuild/SRPMS/*.src.rpm --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
